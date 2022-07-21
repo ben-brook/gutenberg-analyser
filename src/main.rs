@@ -1,3 +1,5 @@
+#![warn(clippy::pedantic)]
+#![allow(clippy::needless_return)]
 use chrono::prelude::*;
 use dashmap::DashMap;
 use rayon::prelude::*;
@@ -6,14 +8,11 @@ use std::io;
 
 const FREQUENTS_SHOWN: usize = 30;
 
-fn ask_txt() -> String {
-    let mut buf = String::new();
+fn ask_txt(buf: &mut String) -> String {
     let client = Client::new();
 
-    loop {
-        io::stdin()
-            .read_line(&mut buf)
-            .expect("Failed to read line");
+    return loop {
+        io::stdin().read_line(buf).expect("Failed to read line");
         let given_id = buf.trim().trim_start_matches(|chr: char| !chr.is_numeric());
         if let Ok(id) = given_id.parse::<u32>() {
             if id > 0 {
@@ -40,7 +39,7 @@ fn ask_txt() -> String {
         }
         println!("Invalid book URL. Try again...");
         buf.clear();
-    }
+    };
 }
 
 fn get_most_frequent(frequency_by_word: DashMap<String, u32>) -> [(String, u32); FREQUENTS_SHOWN] {
@@ -57,12 +56,10 @@ fn get_most_frequent(frequency_by_word: DashMap<String, u32>) -> [(String, u32);
         }
     }
 
-    most_frequent
+    return most_frequent;
 }
 
-fn main() {
-    println!("Welcome to my Project Gutenberg book analyser! Please input a book URL...");
-    let txt = ask_txt();
+fn find_most_frequent(txt: &str) {
     println!("Analysing text...");
     let ts = Utc::now().timestamp_nanos();
 
@@ -84,5 +81,32 @@ fn main() {
     );
     for (idx, (word, freq)) in most_frequent.into_iter().enumerate() {
         println!("{}. {word}: {freq}", idx + 1);
+    }
+}
+
+fn generate_markov_chain(_txt: &str) {}
+
+fn main() {
+    let mut buf = String::new();
+
+    println!("Welcome to my Project Gutenberg book analyser! Please input a book URL...");
+    let txt = ask_txt(&mut buf);
+    println!("Would you like to generate a Markov chain (M) or see the most frequent words (F)?");
+    loop {
+        buf.clear();
+        io::stdin()
+            .read_line(&mut buf)
+            .expect("Failed to read line");
+        match buf.trim().parse() {
+            Ok('F' | 'f') => {
+                find_most_frequent(&txt);
+                break;
+            }
+            Ok('M' | 'm') => {
+                generate_markov_chain(&txt);
+                break;
+            }
+            _ => println!("Failed to find choice. Please enter either 'M' or 'F'."),
+        }
     }
 }
